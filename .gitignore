@@ -3,4 +3,6 @@ api/candidate/__pycache__
 api/company/__pycache__
 api/job/__pycache__
 ai_recruiter/__pycache__
+api/__pycache__
+api/hr/__pycache__
 AI-Recruiter
