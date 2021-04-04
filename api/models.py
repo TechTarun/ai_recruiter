@@ -44,13 +44,19 @@ class Job_Skill_Map(models.Model):
   job = models.ForeignKey(Job, on_delete=models.CASCADE)
   skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
   def __str__(self):
-    return "{job} => {skill}".format(job=self.job.name, skill=self.skill.skill)
+    return "{job} => {skill}".format(job=self.job.profile, skill=self.skill.skill)
 
 class Candidate_Skill_Map(models.Model):
   candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE)
   skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
   def __str__(self):
     return "{candidate} => {skill}".format(candidate=self.candidate.name, skill=self.skill.skill)
+
+class Job_Candidate_Map(models.Model):
+  candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE)
+  job = models.ForeignKey(Job, on_delete=models.CASCADE)
+  def __str__(self):
+    return "{name} => {job} ({company})".format(name=self.name, job=job.profile, company=job.company.name)
 
 class Experience(models.Model):
   description = models.TextField()
