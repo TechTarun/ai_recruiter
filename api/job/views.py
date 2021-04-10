@@ -129,3 +129,22 @@ class Index(APIView):
         "status" : HTTP_400_BAD_REQUEST,
         "message" : "Job not found or cannot be updated"
       })
+
+class All(APIView):
+  def get(self, request):
+    job_list = list()
+    jobs = list(Job.objects.all())
+    for job in jobs:
+      job_list.append({
+        "id" : "JOB_{id}".format(id=hex(job.id)),
+        "profile" : job.profile,
+        "description" : job.description,
+        "qualifications" : job.qualifications,
+        "company" : job.company.name,
+        "posted_on" : job.posted_on,
+        "candidates_applied" : get_candidates_count(job)
+      })
+    return Response({
+      "status" : HTTP_200_OK,
+      "data" : job_list
+    })
