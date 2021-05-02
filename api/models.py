@@ -27,6 +27,7 @@ class Job(models.Model):
   company = models.ForeignKey(Company, on_delete=models.CASCADE)
   hr_posted = models.ForeignKey(HR, on_delete=models.CASCADE)
   posted_on = models.DateTimeField(auto_now_add=True)
+  eligibility = models.TextField(null=True)
   def __str__(self):
     return "{profile} ({company_name})".format(profile=self.profile, company_name=self.company.name)
 
@@ -64,3 +65,10 @@ class Experience(models.Model):
   job = models.ForeignKey(Job, on_delete=models.CASCADE)
   def __str__(self):
     return "{candidate} => {job}".format(candidate=self.candidate.name, job=self.job.profile)
+
+class JobVisualizer(models.Model):
+  job = models.ForeignKey(Job, on_delete=models.CASCADE)
+  series_data = models.TextField()
+  candidate_list = models.TextField()
+  def __str__(self):
+    return "{job}".format(job=self.job)

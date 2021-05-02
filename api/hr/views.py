@@ -3,10 +3,16 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from api.models import *
 
+def get_hashed_id(id):
+  return "HR_{id}".format(id=hex(id))
+
+def get_unhashed_id(hashed_id):
+  return int(hashed_id.split("_")[1], 16)
+
 class Index(APIView):
   def post(self, request):
     params = request.data
-    c_id = int(params.get("id").split("_")[1], 16)
+    c_id = get_unhashed_id(params["id"])
     try:
       company = Company.objects.get(id=c_id)
       hr = HR(
@@ -19,7 +25,7 @@ class Index(APIView):
         "status" : HTTP_201_CREATED,
         "message" : "HR added",
         "data" : {
-          "id" : "HR_{id}".format(id=hex(hr.id)),
+          "id" : get_hashed_id(hr.id),
         }
       })
     except:
@@ -30,7 +36,7 @@ class Index(APIView):
 
   def get(self, request, **kwargs):
     params=kwargs
-    hr_id = int(params["id"].split("_")[1], 16)
+    hr_id = get_unhashed_id(params["id"])
     try:
       hr = HR.objects.get(id=hr_id)
       return Response({
@@ -49,7 +55,7 @@ class Index(APIView):
 
   def delete(self, request):
     params=request.data
-    hr_id = int(params.get("id").split("_")[1], 16)
+    hr_id = get_unhashed_id(params["id"])
     try:
       hr = HR.objects.get(id=hr_id)
       hr.delete()

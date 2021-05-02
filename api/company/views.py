@@ -3,6 +3,17 @@ from rest_framework.status import *
 from rest_framework.views import APIView
 from api.models import *
 
+def get_hashed_id(id):
+  return "COMP_{id}".format(id=hex(id))
+
+def get_unhashed_id(hashed_id):
+  return int(hashed_id.split("_")[1], 16)
+
+def get_hr_email_list(company):
+  hr_list = list(HR.objects.filter(company=company))
+  hr_email_list = [hr.email for hr in hr_list]
+  return hr_email_list
+
 class Index(APIView):
   def post(self, request):
     params = request.data
@@ -18,7 +29,7 @@ class Index(APIView):
         "status" : HTTP_201_CREATED,
         "message" : "Company registered",
         "data" : {
-          "id" : "COMP_{id}".format(id=hex(company.id))
+          "id" : get_hashed_id(company.id)
         }
       })
     except:
@@ -29,7 +40,7 @@ class Index(APIView):
 
   def get(self, request, **kwargs):
     params = kwargs
-    c_id = int(params["id"].split("_")[1], 16)
+    c_id = get_unhashed_id(params["id"])
     try:
       company = Company.objects.get(id=c_id)
       return Response({
@@ -80,4 +91,21 @@ class Index(APIView):
       return Response({
         "status" : HTTP_400_BAD_REQUEST,
         "message" : "Company not found or cannot be updated"
+      })
+
+class Login(APIView):
+  def post(self, request):
+    params = request.data
+    try:
+      company = Company.objects.get(contact_email=params["email"])
+      return Response({
+        "data" : {
+          "id" : get_hashed_id(company.id),
+          "name" : company.name,
+          "hr_list" : get_hr_email_list(company)
+        }
+      })
+    except:
+      return Response({
+        "message" : "Wrong email or password"
       })

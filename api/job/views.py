@@ -1,56 +1,32 @@
 from rest_framework.response import Response
 from rest_framework.status import *
 from rest_framework.views import APIView
-from api.models import *
 import datetime as dt
+from api.models import *
+from api.job.utilities import *
+from api.job.visualization import *
 
-def lowercase_array(array):
-  lowered_array = [ele.lower() for ele in array]
-  return lowered_array
-
-def check_if_exists_or_add_new(skill):
-  try:
-    skill_obj = Skill.objects.get(skill=skill)
-  except:
-    skill_obj = Skill(skill=skill)
-    skill_obj.save()
-  return skill_obj
-
-def get_candidates_count(job):
-  return len(list(Job_Candidate_Map.objects.filter(job=job)))
-
-def rollback(obj_array):
-  for obj in obj_array:
-    obj.delete()
-
-def commit(obj_array):
-  for obj in obj_array:
-    obj.save()
-
-def get_string_time(time):
-  return dt.datetime.strftime(time, "%d/%m/%Y")
-
-def get_job_skills(job):
-  map_obj_array = list(Job_Skill_Map.objects.filter(job=job))
-  skills = [obj.skill.skill for obj in map_obj_array]
-  return skills
-  
 class Index(APIView):
   def post(self, request):
     obj_array = list()
     params = request.data
-    c_id = int(params.get('c_id').split("_")[1], 16)
-    hr_id = int(params.get('hr_id').split("_")[1], 16)
+    hr_id = get_unhashed_id(params['id'])
     skills_array = lowercase_array(params.get('skills'))
+    # add eligibility to job object if present
+    eligibility = ""
+    if params["eligibility"] is not None:
+      for (k, v) in params["eligibility"].items():
+        eligibility += "{0}=>{1}&".format(k, v)
     try:
-      company = Company.objects.get(id=c_id)
       hr = HR.objects.get(id=hr_id)
+      company = hr.company
       job = Job(
         profile=params.get('profile'),
         description=params.get('description'),
         qualifications='<>'.join(params.get('qualifications')),
         hr_posted=hr,
         company=company,
+        eligibility=eligibility
       )
       obj_array.append(job)
       for skill in skills_array:
@@ -62,7 +38,7 @@ class Index(APIView):
         "status" : HTTP_201_CREATED,
         "message" : "Job posted",
         "data" : {
-          "id" : "JOB_{id}".format(id=hex(job.id))
+          "id" : get_hashed_id(job.id)
         }
       })
     except:
@@ -74,27 +50,28 @@ class Index(APIView):
 
   def get(self, request, **kwargs):
     params = kwargs
-    j_id = int(params["id"].split("_")[1], 16)
-    # try:
-    job = Job.objects.get(id=j_id)
-    return Response({
-      "status" : HTTP_200_OK,
-      "data" : {
-        "profile" : job.profile,
-        "company" : job.company.name,
-        "hr" : job.hr_posted.name,
-        "description" : job.description,
-        "qualifications" : job.qualifications.split('<>'),
-        "posted_on" : get_string_time(job.posted_on),
-        "candidates_applied" : get_candidates_count(job),
-        "skills" : get_job_skills(job)
-      }
-    })
-    # except:
-    #   return Response({
-    #     "status" : HTTP_400_BAD_REQUEST,
-    #     "message" : "job not found"
-    #   })
+    j_id = get_unhashed_id(params["id"])
+    try:
+      job = Job.objects.get(id=j_id)
+      return Response({
+        "status" : HTTP_200_OK,
+        "data" : {
+          "profile" : job.profile,
+          "company" : job.company.name,
+          "hr" : job.hr_posted.name,
+          "description" : job.description,
+          "qualifications" : job.qualifications.split('<>'),
+          "posted_on" : get_string_time(job.posted_on),
+          "eligibility" : get_eligibility_dict(job.eligibility),
+          "candidates_applied" : get_candidates_count(job),
+          "skills" : get_job_skills(job)
+        }
+      })
+    except:
+      return Response({
+        "status" : HTTP_400_BAD_REQUEST,
+        "message" : "job not found"
+      })
 
   def delete(self, request):
     params = request.data
@@ -142,9 +119,77 @@ class All(APIView):
         "qualifications" : job.qualifications,
         "company" : job.company.name,
         "posted_on" : job.posted_on,
+        "eligibility" : get_eligibility_dict(job.eligibility),
         "candidates_applied" : get_candidates_count(job)
       })
     return Response({
       "status" : HTTP_200_OK,
       "data" : job_list
     })
+
+class Filter(APIView):
+  def post(self, request):
+    params = request.data
+    hr_email = params["email"]
+    hr = HR.objects.get(email=hr_email)
+    jobs = list(Job.objects.filter(hr_posted=hr))
+    job_list = list()
+    for job in jobs:
+      job_list.append({
+        "id" : get_hashed_id(job.id),
+        "profile" : job.profile,
+        "description" : job.description,
+        "qualifications" : job.qualifications,
+        "posted_on" : job.posted_on,
+        "eligibility" : get_eligibility_dict(job.eligibility),
+        "candidates_applied" : get_candidates_count(job)
+      })
+    hr_details = {
+      "id" : "HR_{id}".format(id=hex(hr.id)),
+      "name" : hr.name
+    }
+    return Response({
+      "data" : {
+        "hr" : hr_details,
+        "jobs" : job_list
+      }
+    })
+
+class Visualization(APIView):
+  # this method will return data for creating visualization
+  def get(self, request, **kwargs):
+    job_id = get_unhashed_id(kwargs["id"])
+    job_vis = JobVisualizer.objects.get(id=job_id)
+    series_data = get_series_data_list_from_str(job_vis.series_data)
+    candidate_list = job_vis.candidate_list.split("&")
+    return Response({
+      "data" : {
+        "series" : series_data,
+        "candidates" : candidate_list
+      }
+    })
+    
+  # this method will update the visualization and then return data for creating visualization
+  def post(self, request):
+    params = request.data
+    job_id = get_unhashed_id(params["id"])
+    job = Job.objects.get(id=job_id)
+    skill_obj_list = list(Job_Skill_Map.objects.filter(job=job))
+    job_skills = [skill_obj.skill for skills_obj in skill_obj_list]
+    parsed_resumes = api_call(parsed_resumes_fetch_api, job_id)
+    series_data, candidate_list = create_visualization(parsed_resumes["data"], job_skills)
+    job_vis = JobVisualizer(
+      job=job, 
+      series_data=convert_series_data_list_to_str(series_data), 
+      candidate_list="&".join(candidate_list)
+    )
+    job_vis.save()
+    return Response({
+      "message" : "Visualization updated",
+      "data" : {
+        "series" : series_data,
+        "candidates" : candidate_list
+      }
+    })
+
+    
