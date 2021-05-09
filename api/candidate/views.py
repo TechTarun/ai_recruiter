@@ -53,7 +53,7 @@ class Login(APIView):
   def post(self, request):
     params = request.data
     email = params["email"]
-    password = params["passsword"]
+    password = params["password"]
     try:
       candidate = Candidate.objects.get(email=email)
       if candidate.password == password:
