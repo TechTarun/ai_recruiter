@@ -1,8 +1,11 @@
 import datetime as dt
 from api.models import *
 
-def get_hashed_id(id):
-  return "JOB_{id}".format(id=hex(id))
+def get_hashed_id(id, model):
+  if model == "job":
+    return "JOB_{id}".format(id=hex(id))
+  elif model == "application":
+    return "APP_{id}".format(id=hex(id))
 
 def get_unhashed_id(hashed_id):
   return int(hashed_id.split("_")[1], 16)

@@ -1,6 +1,8 @@
 from rest_framework.response import Response
 from rest_framework.status import *
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser
+import os
 import datetime as dt
 from api.models import *
 from api.job.utilities import *
@@ -38,7 +40,7 @@ class Index(APIView):
         "status" : HTTP_201_CREATED,
         "message" : "Job posted",
         "data" : {
-          "id" : get_hashed_id(job.id)
+          "id" : get_hashed_id(job.id, "job")
         }
       })
     except:
@@ -137,7 +139,7 @@ class Filter(APIView):
     job_list = list()
     for job in jobs:
       job_list.append({
-        "id" : get_hashed_id(job.id),
+        "id" : get_hashed_id(job.id, "job"),
         "profile" : job.profile,
         "description" : job.description,
         "qualifications" : job.qualifications,
@@ -229,26 +231,49 @@ class EvaluatePersonality(APIView):
     application = Job_Candidate_Map(id=app_id)
 
 class Apply(APIView):
+  parser_classes = (MultiPartParser,)
+  BASE_PATH = "api/job/tmp/"
+
+  def save_to_disk(self, resume, filepath):
+    with open(filepath, "wb+") as destination:
+      for chunk in resume.chunks():
+        destination.write(chunk)
+
   def post(self, request):
     params = request.data
+    files = request.FILES
+
+    # take params and create new application
     cand_id = params["cand_id"]
     job_id = get_unhashed_id(params["job_id"])
-    resume = params["resume"]
     candidate = Candidate.objects.get(id=cand_id)
     job = Job.objects.get(id=job_id)
-    resume_id = parse_resume(resume)
-    new_application = Job_Candidate_Map(
-      job=job, 
-      candidate=candidate,
-      resume_id=resume_id
-    )
+    new_application = Job_Candidate_Map(job=job, candidate=candidate)
     new_application.save()
+
+    # take resume, save it, parse it, remove it
+    resume = files["resume"]
+    filename = resume.name
+    filepath = self.BASE_PATH + filename
+    self.save_to_disk(resume, filepath)
+    response_code = parse_resume(filepath, get_hashed_id(new_application.id, "application"))
+    os.remove(filepath)
+    if response_code == 503:
+      new_application.delete()
+      return Response({
+        "status" : HTTP_503_SERVICE_UNAVAILABLE,
+        "message" : "Try again in sometime..."
+      })
+
+    # add new event
     event = ProgressEvent(belong_to=new_application, key=0)
     event.save()
+
+    # return response
     return Response({
       "status" : HTTP_200_OK,
       "message" : "Application saved...",
       "data" : {
-        "id" : new_application.id
+        "id" : get_hashed_id(new_application.id, "application")
       }
     })

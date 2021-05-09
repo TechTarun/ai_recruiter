@@ -24,7 +24,7 @@ candidate_list = [] # list of names of all candidates
 import textdistance
 from .preprocess_string import PreProcessor
 from .crawl_job_desc import get_job_desc
-from .data import *
+from .parser import *
 from .utilities import stringify_parsed_resume_json
 
 # Constants

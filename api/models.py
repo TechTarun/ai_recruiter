@@ -58,7 +58,7 @@ class Job_Candidate_Map(models.Model):
   applied_on = models.DateTimeField(auto_now_add=True, null=True)
   inteview_slot = models.DateTimeField(null=True)
   def __str__(self):
-    return "{name} => {job} ({company})".format(name=self.name, job=job.profile, company=job.company.name)
+    return "{name} => {job} ({company})".format(name=self.candidate.name, job=self.job.profile, company=self.job.company.name)
 
 class Experience(models.Model):
   description = models.TextField()
@@ -78,7 +78,7 @@ class ProgressEvent(models.Model):
   key = models.IntegerField(null=True)
   remark = models.TextField()
   def __str__(self):
-    return self.belong_to
+    return self.belong_to.candidate.name + " => " + str(self.key)
 
 class InterviewAnswer(models.Model):
   belong_to = models.ForeignKey(Job_Candidate_Map, on_delete=models.CASCADE)
