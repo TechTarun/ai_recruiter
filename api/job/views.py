@@ -63,7 +63,8 @@ class Index(APIView):
           "qualifications" : job.qualifications.split('<>'),
           "posted_on" : get_string_time(job.posted_on),
           "eligibility" : get_eligibility_dict(job.eligibility),
-          "candidates_applied" : get_candidates_count(job),
+          "candidates_count" : get_candidates_count(job),
+          "candidates_applied" : get_job_candidates(job),
           "skills" : get_job_skills(job)
         }
       })
@@ -192,4 +193,62 @@ class Visualization(APIView):
       }
     })
 
-    
+class Interview(APIView):
+  def post(self, request):
+    params = request.data
+    app_id = params["id"]
+    application = Job_Candidate_Map(id=app_id)
+    interview_answers = InterviewAnswer(
+      belong_to=application, 
+      ans1=params["ans1"], 
+      ans2=params["ans2"], 
+      ans3=params["ans3"], 
+      ans4=params["ans4"], 
+      ans5=params["ans5"])
+    interview_answers.save()
+    return Response({
+      "status" : HTTP_200_OK,
+      "message" : "Answers saved successfully..."
+    })
+
+  def get(self, request, **kwargs):
+    params = kwargs
+    return Response({
+      "data" : interview_questions()
+    })
+
+class EvaluatePersonality(APIView):
+  def post(self, request):
+    # calls for evaluation of a new candidate
+    pass
+
+  def get(self, request, **kwargs):
+    # returns personality evaluation of a candidate
+    params = request.data
+    app_id = params["id"]
+    application = Job_Candidate_Map(id=app_id)
+
+class Apply(APIView):
+  def post(self, request):
+    params = request.data
+    cand_id = params["cand_id"]
+    job_id = get_unhashed_id(params["job_id"])
+    resume = params["resume"]
+    candidate = Candidate.objects.get(id=cand_id)
+    job = Job.objects.get(id=job_id)
+    resume_id = parse_resume(resume)
+    new_application = Job_Candidate_Map(
+      job=job, 
+      candidate=candidate,
+      resume_id=resume_id
+    )
+    new_application.save()
+    event = ProgressEvent(belong_to=new_application, key=0)
+    event.save()
+    return Response({
+      "status" : HTTP_200_OK,
+      "message" : "Application saved...",
+      "data" : {
+        "id" : new_application.id
+      }
+    })

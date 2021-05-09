@@ -22,11 +22,10 @@ candidate_list = [] # list of names of all candidates
 
 # Imports
 import textdistance
-from preprocess_string import PreProcessor
-from crawl_job_desc import get_job_desc
-from resume_parser import *
-from data import *
-from utilities import stringify_parsed_resume_json
+from .preprocess_string import PreProcessor
+from .crawl_job_desc import get_job_desc
+from .data import *
+from .utilities import stringify_parsed_resume_json
 
 # Constants
 JOB_URL = 'https://www.amazon.jobs/en/jobs/1227693/software-development-engineer-intern'
@@ -89,11 +88,12 @@ def create_visualization(parsed_resumes_list, job_skills):
 
 #
 # main section
-job_desc = get_job_desc(JOB_URL)
-parsed_resumes = get_parsed_data()
-for resume in parsed_resumes["data"]:
-  resume_data = stringify_parsed_resume_json(resume)
-  check_similarity_score(job_desc, resume_data)
-# job_desc = read_docx_resume('jd1.docx')
+# job_desc = get_job_desc(JOB_URL)
+# parsed_resumes = get_parsed_data()
+# if (parsed_resumes["count"]):
+#   for resume in parsed_resumes["data"]:
+#     resume_data = stringify_parsed_resume_json(resume)
+#     check_similarity_score(job_desc, resume_data)
+# else:
+#   print("no parsed data")
 #
-

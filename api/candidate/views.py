@@ -2,17 +2,127 @@ from rest_framework.response import Response
 from rest_framework.status import *
 from rest_framework.views import APIView
 from api.models import *
+from api.milestones import milestones_hash
 
-class Index(APIView):
+def get_latest_event(application):
+  all_events = list(ProgressEvent.objects.filter(belong_to=application))
+  all_keys = []
+  for event in all_events:
+    all_keys.append(event.key)
+  latest_key = max(all_keys)
+  latest_event = milestones_hash[latest_key]
+  return latest_event
+
+def get_all_status(application):
+  all_events = list(ProgressEvent.objects.filter(belong_to=application))
+  status_data = []
+  for event in all_events:
+    status_data.append({
+      "key" : event.key,
+      "event" : milestones_hash[event.key],
+      "remarks" : event.remark
+    })
+  return status_data
+
+class Signup(APIView):
   def post(self, request):
-    pass
+    params = request.data
+    name = params["name"]
+    email = params["email"]
+    password = params["password"]
+    try:
+      candidate = Candidate.objects.get(email=email)
+      return Response({
+        "status" : HTTP_400_BAD_REQUEST,
+        "message" : "Email ID already registered..."
+      })
+    except:
+      pass
+    new_candidate = Candidate(
+      name=name,
+      email=email,
+      password=password
+    )
+    new_candidate.save()
+    return Response({
+      "status" : HTTP_200_OK,
+      "message" : "Account registered..."
+    })
 
-  def get(self, request):
-    pass
+class Login(APIView):
+  def post(self, request):
+    params = request.data
+    email = params["email"]
+    password = params["passsword"]
+    try:
+      candidate = Candidate.objects.get(email=email)
+      if candidate.password == password:
+        return Response({
+          "status" : HTTP_200_OK,
+          "message" : "Login successfully...",
+          "data" : {
+            "id" : candidate.id
+          }
+        })
+      else:
+        return Response({
+          "status" : HTTP_400_BAD_REQUEST,
+          "message" : "Password is incorrect..."
+        })
+    except:
+      return Response({
+        "status" : HTTP_400_BAD_REQUEST,
+        "message" : "Email ID not registered..."
+      })
 
-  def delete(self, request):
-    pass
+class AllApplied(APIView):
+  def get(self, request, **kwargs):
+    applications = []
+    params = kwargs
+    cand_id = params["id"]
+    candidate = Candidate.objects.get(id=cand_id)
+    all_applications = list(Job_Candidate_Map.objects.filter(candidate=candidate))
+    for application in all_applications:
+      applications.append({
+        "app_id" : application.id,
+        "job_id" : application.job.id,
+        "profile" : application.job.profile,
+        "applied_on" : application.applied_on,
+        "company" : application.job.company.name,
+        "latest_status" : get_latest_event(application)
+      })
+    return Response({
+      "status" : HTTP_200_OK,
+      "data" : applications
+    })
 
-  def put(self, request):
-    pass
+class AppliedDetails(APIView):
+  def get(self, request, **kwargs):
+    params = kwargs
+    app_id = params["id"]
+    application = Job_Candidate_Map(id=app_id)
+    events = get_all_status(application)
+    slot = application.interview_slot
+    return Response({
+      "status" : HTTP_200_OK,
+      "data" : {
+        "id" : app_id,
+        "data" : {
+          "events" : events,
+          "slot" : slot
+        }
+      }
+    })
 
+class BookSlot(APIView):
+  def post(self, request):
+    params = request.data
+    app_id = params["id"]
+    slot_datetime = params["slot"]
+    application = Job_Candidate_Map(id=app_id)
+    application.interview_slot = slot_datetime
+    application.save()
+    return Response({
+      "status" : HTTP_200_OK,
+      "message" : "Personality assessment scheduled..."
+    })

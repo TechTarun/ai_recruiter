@@ -1,7 +1,5 @@
 from django.db import models
-
-# Create your models here.
-from django.db import models
+from datetime import datetime
 
 class Entity(models.Model):
   name = models.CharField(max_length=100)
@@ -32,7 +30,7 @@ class Job(models.Model):
     return "{profile} ({company_name})".format(profile=self.profile, company_name=self.company.name)
 
 class Candidate(Entity):
-  resume = models.CharField(max_length=1000)
+  password = models.CharField(max_length=20, default="candidate")
   def __str__(self):
     return self.name
 
@@ -56,15 +54,17 @@ class Candidate_Skill_Map(models.Model):
 class Job_Candidate_Map(models.Model):
   candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE)
   job = models.ForeignKey(Job, on_delete=models.CASCADE)
+  resume_id = models.CharField(max_length=1000, null=True)
+  applied_on = models.DateTimeField(auto_now_add=True, null=True)
+  inteview_slot = models.DateTimeField(null=True)
   def __str__(self):
     return "{name} => {job} ({company})".format(name=self.name, job=job.profile, company=job.company.name)
 
 class Experience(models.Model):
   description = models.TextField()
-  candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE)
-  job = models.ForeignKey(Job, on_delete=models.CASCADE)
+  belong_to = models.ForeignKey(Job_Candidate_Map, on_delete=models.CASCADE, null=True)
   def __str__(self):
-    return "{candidate} => {job}".format(candidate=self.candidate.name, job=self.job.profile)
+    return "{candidate} => {job}".format(candidate=self.belong_to.candidate.name, job=self.belong_to.job.profile)
 
 class JobVisualizer(models.Model):
   job = models.ForeignKey(Job, on_delete=models.CASCADE)
@@ -72,3 +72,20 @@ class JobVisualizer(models.Model):
   candidate_list = models.TextField()
   def __str__(self):
     return "{job}".format(job=self.job)
+
+class ProgressEvent(models.Model):
+  belong_to = models.ForeignKey(Job_Candidate_Map, on_delete=models.CASCADE)
+  key = models.IntegerField(null=True)
+  remark = models.TextField()
+  def __str__(self):
+    return self.belong_to
+
+class InterviewAnswer(models.Model):
+  belong_to = models.ForeignKey(Job_Candidate_Map, on_delete=models.CASCADE)
+  ans1 = models.TextField()
+  ans2 = models.TextField()
+  ans3 = models.TextField()
+  ans4 = models.TextField()
+  ans5 = models.TextField()
+  def __str__(self):
+    return self.belong_to

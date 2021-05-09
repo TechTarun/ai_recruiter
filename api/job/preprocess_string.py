@@ -30,7 +30,7 @@ class PreProcessor():
     # remove both punctuations and stop words
     elif 'total' in type.lower():
       for token in tokenlist:
-        if token not in self.STOP_WORDS and token not in self.PUNCTUATIONS and token.isalpha():
+        if token not in self.STOP_WORDS and token not in self.PUNCTUATIONS:
           cleaned_tokens.append(token)
     return cleaned_tokens
 

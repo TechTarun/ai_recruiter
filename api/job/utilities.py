@@ -1,5 +1,5 @@
 import datetime as dt
-# from api.models import *
+from api.models import *
 
 def get_hashed_id(id):
   return "JOB_{id}".format(id=hex(id))
@@ -103,3 +103,23 @@ def stringify_parsed_resume_json(resume):
     experience = ""
   resume_data = "{0} {1} {2} {3}".format(skills, projects, experience, education)
   return resume_data
+
+def get_job_candidates(job):
+  candidate_list = list(Job_Candidate_Map.objects.filter(job=job))
+  candidate_data = []
+  for candidate in candidate_list:
+    candidate_data.append({
+      "id" : candidate.id,
+      "name" : candidate.name,
+      "email" : candidate.email
+    })
+  return candidate_data
+
+def interview_questions():
+  return [
+    "Question 1",
+    "Question 2",
+    "Questions 3",
+    "Question 4",
+    "Questions 5"
+  ]
