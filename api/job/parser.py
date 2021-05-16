@@ -25,19 +25,16 @@ def get_all_parsed_resumes():
       "count": 0
     }
 
-def parse_resume(filepath, app_id):
+def parse_resume(filepath, job_id):
   API = "https://resumee-parser.herokuapp.com/api/v1/aiRec/postResume"
 
-  payload={'jobId': app_id}
+  payload={'jobId': job_id}
   files=[
     ('tmp',('resume',open(filepath,'rb'),'application/vnd.openxmlformats-officedocument.wordprocessingml.document'))
   ]
+  print(files)
   headers = {}
 
   response = requests.request("POST", API, headers=headers, data=payload, files=files)
 
   return response.status_code
-
-
-parse_resume("api/job/tmp/sandeep_Resume.docx", "APP_012")
-# get_parsed_data()

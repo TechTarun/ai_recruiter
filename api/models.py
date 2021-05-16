@@ -56,7 +56,7 @@ class Job_Candidate_Map(models.Model):
   job = models.ForeignKey(Job, on_delete=models.CASCADE)
   resume_id = models.CharField(max_length=1000, null=True)
   applied_on = models.DateTimeField(auto_now_add=True, null=True)
-  inteview_slot = models.DateTimeField(null=True)
+  interview_slot = models.CharField(max_length=50, null=True)
   def __str__(self):
     return "{name} => {job} ({company})".format(name=self.candidate.name, job=self.job.profile, company=self.job.company.name)
 

@@ -97,9 +97,21 @@ def convert_series_data_list_to_str(series_data_list):
   return series_data_str
 
 def stringify_parsed_resume_json(resume):
-  skills = resume["parsedData"]["parts"]["skills"]
-  projects = resume["parsedData"]["parts"]["projects"]
-  education = resume["parsedData"]["parts"]["education"]
+  try:
+    skills = resume["parsedData"]["parts"]["skills"]
+  except:
+    skills = ""
+
+  try:
+    projects = resume["parsedData"]["parts"]["projects"]
+  except:
+    projects = ""
+
+  try:
+    education = resume["parsedData"]["parts"]["education"]
+  except:
+    education = ""
+
   try:
     experience = resume["parsedData"]["parts"]["experience"]
   except:

@@ -47,15 +47,15 @@ def check_similarity_score(job_desc, parsed_resume):
   ## Using Jaccard Index
   jacc_similarity_score = textdistance.jaccard.similarity(job_token_list, resume_token_list)
   print(jacc_similarity_score)
-  ## Using Sorenson-Dice Coefficient
-  sor_dice_similarity_score = textdistance.sorensen_dice.similarity(job_token_list, resume_token_list)
-  print(sor_dice_similarity_score)
-  ## Using Tversky Index
-  tversky_similarity_score = textdistance.tversky.similarity(job_token_list, resume_token_list)
-  print(tversky_similarity_score)
-  ## Using Cosine Similarity
-  cosine_similarity_score = textdistance.cosine.similarity(job_token_list, resume_token_list)
-  print(cosine_similarity_score)
+  # ## Using Sorenson-Dice Coefficient
+  # sor_dice_similarity_score = textdistance.sorensen_dice.similarity(job_token_list, resume_token_list)
+  # print(sor_dice_similarity_score)
+  # ## Using Tversky Index
+  # tversky_similarity_score = textdistance.tversky.similarity(job_token_list, resume_token_list)
+  # print(tversky_similarity_score)
+  # ## Using Cosine Similarity
+  # cosine_similarity_score = textdistance.cosine.similarity(job_token_list, resume_token_list)
+  # print(cosine_similarity_score)
   print("=============")
 
 def get_empty_skills_score_list(skills):
@@ -88,12 +88,4 @@ def create_visualization(parsed_resumes_list, job_skills):
 
 #
 # main section
-# job_desc = get_job_desc(JOB_URL)
-# parsed_resumes = get_parsed_data()
-# if (parsed_resumes["count"]):
-#   for resume in parsed_resumes["data"]:
-#     resume_data = stringify_parsed_resume_json(resume)
-#     check_similarity_score(job_desc, resume_data)
-# else:
-#   print("no parsed data")
 #

@@ -7,6 +7,7 @@ import datetime as dt
 from api.models import *
 from api.job.utilities import *
 from api.job.visualization import *
+from api.job.parser import *
 
 class Index(APIView):
   def post(self, request):
@@ -52,7 +53,7 @@ class Index(APIView):
 
   def get(self, request, **kwargs):
     params = kwargs
-    j_id = get_unhashed_id(params["id"])
+    j_id = get_unhashed_id(params["job_id"])
     try:
       job = Job.objects.get(id=j_id)
       return Response({
@@ -159,46 +160,63 @@ class Filter(APIView):
     })
 
 class Visualization(APIView):
+  def filter_by_job(self, all_resumes, job_id):
+    # parsed_resumes_list = list()
+    # for resume in all_resumes:
+    #   if get_hashed_id(job_id, "job") == resume["jobId"]:
+    #     parsed_resumes_list.append(resume)
+    return all_resumes
+
   # this method will return data for creating visualization
   def get(self, request, **kwargs):
-    job_id = get_unhashed_id(kwargs["id"])
-    job_vis = JobVisualizer.objects.get(id=job_id)
-    series_data = get_series_data_list_from_str(job_vis.series_data)
-    candidate_list = job_vis.candidate_list.split("&")
+    job_id = get_unhashed_id(kwargs["job_id"])
+    parsed_resumes_list = self.filter_by_job(get_all_parsed_resumes()["data"], job_id)
+    job_skills = ["AWS", "Python", "C++", "Web", "API"]
+    series, candidates_list = create_visualization(parsed_resumes_list, job_skills)
     return Response({
       "data" : {
-        "series" : series_data,
-        "candidates" : candidate_list
+        "series" : series,
+        "candidates_list" : candidates_list
       }
     })
+    # job_id = get_unhashed_id(kwargs["id"])
+    # job_vis = JobVisualizer.objects.get(id=job_id)
+    # series_data = get_series_data_list_from_str(job_vis.series_data)
+    # candidate_list = job_vis.candidate_list.split("&")
+    # return Response({
+    #   "data" : {
+    #     "series" : series_data,
+    #     "candidates" : candidate_list
+    #   }
+    # })
     
   # this method will update the visualization and then return data for creating visualization
-  def post(self, request):
-    params = request.data
-    job_id = get_unhashed_id(params["id"])
-    job = Job.objects.get(id=job_id)
-    skill_obj_list = list(Job_Skill_Map.objects.filter(job=job))
-    job_skills = [skill_obj.skill for skills_obj in skill_obj_list]
-    parsed_resumes = api_call(parsed_resumes_fetch_api, job_id)
-    series_data, candidate_list = create_visualization(parsed_resumes["data"], job_skills)
-    job_vis = JobVisualizer(
-      job=job, 
-      series_data=convert_series_data_list_to_str(series_data), 
-      candidate_list="&".join(candidate_list)
-    )
-    job_vis.save()
-    return Response({
-      "message" : "Visualization updated",
-      "data" : {
-        "series" : series_data,
-        "candidates" : candidate_list
-      }
-    })
+  # def post(self, request):
+  #   params = request.data
+  #   job_id = get_unhashed_id(params["id"])
+  #   job = Job.objects.get(id=job_id)
+  #   skill_obj_list = list(Job_Skill_Map.objects.filter(job=job))
+  #   job_skills = [skill_obj.skill for skills_obj in skill_obj_list]
+  #   parsed_resumes = api_call(parsed_resumes_fetch_api, job_id)
+  #   series_data, candidate_list = create_visualization(parsed_resumes["data"], job_skills)
+  #   job_vis = JobVisualizer(
+  #     job=job, 
+  #     series_data=convert_series_data_list_to_str(series_data), 
+  #     candidate_list="&".join(candidate_list)
+  #   )
+  #   job_vis.save()
+  #   return Response({
+  #     "message" : "Visualization updated",
+  #     "data" : {
+  #       "series" : series_data,
+  #       "candidates" : candidate_list
+  #     }
+  #   })
 
 class Interview(APIView):
   def post(self, request):
     params = request.data
-    app_id = params["id"]
+    app_id = params["app_id"]
     application = Job_Candidate_Map(id=app_id)
     interview_answers = InterviewAnswer(
       belong_to=application, 
@@ -208,6 +226,8 @@ class Interview(APIView):
       ans4=params["ans4"], 
       ans5=params["ans5"])
     interview_answers.save()
+    event = ProgressEvent(belong_to=application, key=4)
+    event.save()
     return Response({
       "status" : HTTP_200_OK,
       "message" : "Answers saved successfully..."
@@ -256,8 +276,8 @@ class Apply(APIView):
     filename = resume.name
     filepath = self.BASE_PATH + filename
     self.save_to_disk(resume, filepath)
-    response_code = parse_resume(filepath, get_hashed_id(new_application.id, "application"))
-    os.remove(filepath)
+    response_code = parse_resume(filepath, get_hashed_id(job.id, "job"))
+    # os.remove(filepath)
     if response_code == 503:
       new_application.delete()
       return Response({
