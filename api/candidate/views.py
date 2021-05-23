@@ -54,7 +54,7 @@ class Signup(APIView):
       "status" : HTTP_200_OK,
       "message" : "Account registered...",
       "data" : {
-        "id" : candidate.id
+        "id" : new_candidate.id
       }
     })
 
