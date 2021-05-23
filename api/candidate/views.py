@@ -39,11 +39,11 @@ class Signup(APIView):
     password = params["password"]
     try:
       candidate = Candidate.objects.get(email=email)
+      raise
+    except:
       raise ParseError(
         detail="Email ID already registered..."
       )
-    except:
-      pass
     new_candidate = Candidate(
       name=name,
       email=email,
@@ -74,12 +74,10 @@ class Login(APIView):
           }
         })
       else:
-        raise ParseError(
-          detail="Password is incorrect..."
-        )
+        raise
     except:
       raise ParseError(
-        detail="Email ID not registered..."
+        detail="Email ID or password is incorrect..."
       )
 
 class AllApplied(APIView):
