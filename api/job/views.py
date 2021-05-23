@@ -2,6 +2,7 @@ from rest_framework.response import Response
 from rest_framework.status import *
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
+from rest_framework.exceptions import APIException
 import os
 import datetime as dt
 from api.models import *
@@ -13,7 +14,7 @@ class Index(APIView):
   def post(self, request):
     obj_array = list()
     params = request.data
-    hr_id = get_unhashed_id(params['id'])
+    hr_email = params["hr_email"]
     skills_array = lowercase_array(params.get('skills'))
     # add eligibility to job object if present
     eligibility = ""
@@ -21,7 +22,7 @@ class Index(APIView):
       for (k, v) in params["eligibility"].items():
         eligibility += "{0}=>{1}&".format(k, v)
     try:
-      hr = HR.objects.get(id=hr_id)
+      hr = HR.objects.get(email=hr_email)
       company = hr.company
       job = Job(
         profile=params.get('profile'),
@@ -220,11 +221,11 @@ class Interview(APIView):
     application = Job_Candidate_Map(id=app_id)
     interview_answers = InterviewAnswer(
       belong_to=application, 
-      ans1=params["ans1"], 
-      ans2=params["ans2"], 
-      ans3=params["ans3"], 
-      ans4=params["ans4"], 
-      ans5=params["ans5"])
+      ans1=params["answer"][0], 
+      ans2=params["answer"][1], 
+      ans3=params["answer"][2], 
+      ans4=params["answer"][3], 
+      ans5=params["answer"][4])
     interview_answers.save()
     event = ProgressEvent(belong_to=application, key=4)
     event.save()
@@ -280,10 +281,9 @@ class Apply(APIView):
     # os.remove(filepath)
     if response_code == 503:
       new_application.delete()
-      return Response({
-        "status" : HTTP_503_SERVICE_UNAVAILABLE,
-        "message" : "Try again in sometime..."
-      })
+      raise APIException(
+        detail="Try again in sometime..."
+      )
 
     # add new event
     event = ProgressEvent(belong_to=new_application, key=0)

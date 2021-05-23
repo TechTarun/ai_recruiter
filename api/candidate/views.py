@@ -1,6 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.status import *
 from rest_framework.views import APIView
+from rest_framework.exceptions import ParseError
 from datetime import datetime
 from api.models import *
 from api.milestones import milestones_hash
@@ -38,10 +39,9 @@ class Signup(APIView):
     password = params["password"]
     try:
       candidate = Candidate.objects.get(email=email)
-      return Response({
-        "status" : HTTP_400_BAD_REQUEST,
-        "message" : "Email ID already registered..."
-      })
+      raise ParseError(
+        detail="Email ID already registered..."
+      )
     except:
       pass
     new_candidate = Candidate(
@@ -52,7 +52,10 @@ class Signup(APIView):
     new_candidate.save()
     return Response({
       "status" : HTTP_200_OK,
-      "message" : "Account registered..."
+      "message" : "Account registered...",
+      "data" : {
+        "id" : candidate.id
+      }
     })
 
 class Login(APIView):
@@ -71,15 +74,13 @@ class Login(APIView):
           }
         })
       else:
-        return Response({
-          "status" : HTTP_400_BAD_REQUEST,
-          "message" : "Password is incorrect..."
-        })
+        raise ParseError(
+          detail="Password is incorrect..."
+        )
     except:
-      return Response({
-        "status" : HTTP_400_BAD_REQUEST,
-        "message" : "Email ID not registered..."
-      })
+      raise ParseError(
+        detail="Email ID not registered..."
+      )
 
 class AllApplied(APIView):
   def get(self, request, **kwargs):
