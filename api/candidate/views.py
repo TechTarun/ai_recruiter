@@ -37,26 +37,25 @@ class Signup(APIView):
     name = params["name"]
     email = params["email"]
     password = params["password"]
-    try:
-      candidate = Candidate.objects.get(email=email)
-      raise
-    except:
+    candidate = Candidate.objects.filter(email=email).first()
+    if candidate:
       raise ParseError(
         detail="Email ID already registered..."
       )
-    new_candidate = Candidate(
-      name=name,
-      email=email,
-      password=password
-    )
-    new_candidate.save()
-    return Response({
-      "status" : HTTP_200_OK,
-      "message" : "Account registered...",
-      "data" : {
-        "id" : new_candidate.id
-      }
-    })
+    else:
+      new_candidate = Candidate(
+        name=name,
+        email=email,
+        password=password
+      )
+      new_candidate.save()
+      return Response({
+        "status" : HTTP_200_OK,
+        "message" : "Account registered...",
+        "data" : {
+          "id" : new_candidate.id
+        }
+      })
 
 class Login(APIView):
   def post(self, request):
