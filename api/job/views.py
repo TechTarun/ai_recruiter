@@ -253,7 +253,7 @@ class EvaluatePersonality(APIView):
 
 class Apply(APIView):
   parser_classes = (MultiPartParser,)
-  BASE_PATH = "api/job/tmp/"
+  BASE_PATH = "api/job/"
 
   def save_to_disk(self, resume, filepath):
     with open(filepath, "wb+") as destination:
