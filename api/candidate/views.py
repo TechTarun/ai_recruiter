@@ -111,7 +111,7 @@ class AppliedDetails(APIView):
       "status" : HTTP_200_OK,
       "data" : {
         "id" : app_id,
-        "data" : {
+        "events_data" : {
           "events" : events,
           "slot" : slot
         }
