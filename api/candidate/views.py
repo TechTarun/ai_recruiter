@@ -6,6 +6,17 @@ from datetime import datetime
 from api.models import *
 from api.milestones import milestones_hash
 
+def get_hashed_id(id, model):
+  if model == "job":
+    return "JOB_{id}".format(id=hex(id))
+  elif model == "application":
+    return "APP_{id}".format(id=hex(id))
+  elif model  == "candidate":
+    return "CAND_{id}".format(id=hex(id))
+
+def get_unhashed_id(hashed_id):
+  return int(hashed_id.split("_")[1], 16)
+
 def get_latest_event(application):
   all_events = list(ProgressEvent.objects.filter(belong_to=application))
   if len(all_events) > 0:
@@ -69,7 +80,7 @@ class Login(APIView):
           "status" : HTTP_200_OK,
           "message" : "Login successfully...",
           "data" : {
-            "id" : candidate.id
+            "id" : get_hashed_id(candidate.id, "candidate")
           }
         })
       else:
@@ -83,13 +94,13 @@ class AllApplied(APIView):
   def get(self, request, **kwargs):
     applications = []
     params = kwargs
-    cand_id = params["app_id"]
+    cand_id = get_unhashed_id(params["cand_id"])
     candidate = Candidate.objects.get(id=cand_id)
     all_applications = list(Job_Candidate_Map.objects.filter(candidate=candidate))
     for application in all_applications:
       applications.append({
-        "app_id" : application.id,
-        "job_id" : application.job.id,
+        "app_id" : get_hashed_id(application.id, "application"),
+        "job_id" : get_hashed_id(application.job.id, "job"),
         "profile" : application.job.profile,
         "applied_on" : application.applied_on,
         "company" : application.job.company.name,
@@ -103,14 +114,14 @@ class AllApplied(APIView):
 class AppliedDetails(APIView):
   def get(self, request, **kwargs):
     params = kwargs
-    app_id = params["app_id"]
+    app_id = get_unhashed_id(params["app_id"])
     application = Job_Candidate_Map.objects.get(id=app_id)
     events = get_all_status(application)
     slot = application.interview_slot
     return Response({
       "status" : HTTP_200_OK,
       "data" : {
-        "id" : app_id,
+        "id" : get_hashed_id(app_id, "application"),
         "events_data" : {
           "events" : events,
           "slot" : slot
@@ -121,7 +132,7 @@ class AppliedDetails(APIView):
 class BookSlot(APIView):
   def post(self, request):
     params = request.data
-    app_id = params["app_id"]
+    app_id = get_unhashed_id(params["app_id"])
     slot_datetime = params["slot"] # string type date e.g. - Sat, May 15 2021
     application = Job_Candidate_Map.objects.get(id=app_id)
     application.interview_slot = slot_datetime

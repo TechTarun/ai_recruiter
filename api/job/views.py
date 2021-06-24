@@ -217,7 +217,7 @@ class Visualization(APIView):
 class Interview(APIView):
   def post(self, request):
     params = request.data
-    app_id = params["app_id"]
+    app_id = get_unhashed_id(params["app_id"])
     application = Job_Candidate_Map(id=app_id)
     interview_answers = InterviewAnswer(
       belong_to=application, 
@@ -265,7 +265,7 @@ class Apply(APIView):
     files = request.FILES
 
     # take params and create new application
-    cand_id = params["cand_id"]
+    cand_id = get_unhashed_id(params["cand_id"])
     job_id = get_unhashed_id(params["job_id"])
     candidate = Candidate.objects.get(id=cand_id)
     job = Job.objects.get(id=job_id)
