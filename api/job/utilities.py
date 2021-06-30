@@ -132,9 +132,9 @@ def get_job_candidates(job):
 
 def interview_questions():
   return [
-    "Question 1",
-    "Question 2",
-    "Questions 3",
-    "Question 4",
-    "Questions 5"
+    "Why do you think you are fit for this role?",
+    "What are your strengths and weaknesses?",
+    "How do you handle when you get nervous or anxious?",
+    "Do you consider yourself a good team leader and why?",
+    "What did you learn from your greatest failure?"
   ]
